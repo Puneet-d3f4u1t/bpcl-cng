@@ -3,511 +3,174 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BPCL CNG Gas Station | Find the Nearest Gas Stations</title>
-  <!-- Tailwind CSS CDN -->
+  <title>BPCL CNG Gas Station Locator</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts: Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <!-- Font Awesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Inter', sans-serif;
-      /* Official BPCL Corporate Blue Gradient */
-      background: linear-gradient(180deg, #0066B3 0%, #005599 55%, #004B87 100%);
+      background: linear-gradient(180deg, #0066B3 0%, #004B87 100%);
       min-height: 100vh;
     }
-
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #004B87;
-    }
-    ::-webkit-scrollbar-thumb {
+    .bpcl-top-bar {
+      height: 6px;
       background: #FFE600;
-      border-radius: 3px;
+      width: 100%;
     }
-
-    /* Online Station (24x7 CNG) Green Block */
-    .station-block-online {
-      background: linear-gradient(180deg, #16A34A 0%, #15803D 100%);
-      border: 1px solid rgba(74, 222, 128, 0.45);
-      box-shadow: 0 4px 12px rgba(5, 46, 22, 0.35);
-      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+    .station-block {
+      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
     }
-    .station-block-online:hover {
-      background: linear-gradient(180deg, #18b252 0%, #168a42 100%);
-      border-color: rgba(134, 239, 172, 0.85);
+    .station-block:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(5, 46, 22, 0.5);
+      filter: brightness(1.07);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
     }
-
-    /* DBS Station (Daughter Booster) BPCL Deep Navy Blue Block */
-    .station-block-dbs {
-      background: linear-gradient(180deg, #0F3460 0%, #0B3B75 100%);
-      border: 1px solid rgba(56, 189, 248, 0.28);
-      box-shadow: 0 4px 12px rgba(2, 18, 44, 0.4);
-      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+    .station-block:active {
+      transform: scale(0.99);
     }
-    .station-block-dbs:hover {
-      background: linear-gradient(180deg, #14427a 0%, #0e478c 100%);
-      border-color: rgba(125, 211, 252, 0.65);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(2, 18, 44, 0.55);
+    /* Online 24x7 Station - Green */
+    .block-online {
+      background-color: #15803D;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+    }
+    /* Daughter Booster Station (DBS) - BPCL Deep Navy Blue */
+    .block-dbs {
+      background-color: #002F5F;
+      border: 1px solid rgba(255, 255, 255, 0.15);
     }
   </style>
 </head>
-<body class="text-white antialiased selection:bg-[#FFE600] selection:text-[#004B87] pb-14">
+<body class="text-white antialiased selection:bg-yellow-300 selection:text-blue-900">
 
-  <!-- Signature BPCL Yellow 4px Top Accent Bar -->
-  <div class="w-full h-1 bg-[#FFE600] shadow-sm"></div>
+  <!-- BPCL Yellow Top Accent Bar -->
+  <div class="bpcl-top-bar"></div>
 
-  <!-- Centered Minimalist Column (Max-Width 520px) -->
-  <main class="max-w-[520px] mx-auto px-4 pt-8 sm:pt-10">
+  <!-- Main Container -->
+  <main class="max-w-xl mx-auto px-4 pt-8 pb-16 flex flex-col items-center">
 
-    <!-- Header Section: Circular White Badge with Exact BPCL Gas Logo -->
-    <div class="flex flex-col items-center text-center">
-      <div class="w-[132px] h-[132px] rounded-full bg-white shadow-xl flex items-center justify-center p-2.5 mb-5 ring-4 ring-white/15 select-none">
-        <!-- High-Precision Vector Recreation of Uploaded BPCL Gas Logo.png -->
-        <svg viewBox="0 0 330 125" class="w-full h-auto" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="BPCL GAS Live Green Live Better Logo">
-          <!-- LEFT SECTION: GAS + Three Leaves + Live Green Live Better -->
-          <g>
-            <!-- Small Blue Leaf (pointing up-left) -->
-            <path d="M95 41 C84 34, 81 20, 86 11 C96 16, 100 28, 95 41 Z" fill="#0072BC"/>
-            <path d="M94 39 C90 31, 88 23, 87 16" stroke="#FFFFFF" stroke-width="1.3" stroke-linecap="round"/>
-
-            <!-- Small Yellow Leaf (pointing left) -->
-            <path d="M93 46 C77 45, 67 35, 68 23 C81 24, 91 33, 93 46 Z" fill="#FFE600"/>
-            <path d="M91 45 C83 40, 77 35, 72 28" stroke="#FFFFFF" stroke-width="1.3" stroke-linecap="round"/>
-
-            <!-- Large Lime-Green Leaf (curving right with central white vein) -->
-            <path d="M95 47 C96 22, 118 6, 148 5 C146 31, 131 48, 102 47 Z" fill="#8DC63F"/>
-            <!-- Stem & Vein -->
-            <path d="M94 52 C99 35, 114 21, 134 15" stroke="#8DC63F" stroke-width="4" stroke-linecap="round"/>
-            <path d="M96 47 C104 33, 117 22, 133 16" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
-
-            <!-- Bold "GAS" Typography (#0072BC) -->
-            <text x="4" y="96" fill="#0072BC" font-family="Inter, Arial, sans-serif" font-weight="800" font-size="68" letter-spacing="-2">G</text>
-            <text x="68" y="96" fill="#0072BC" font-family="Inter, Arial, sans-serif" font-weight="800" font-size="68" letter-spacing="-2">A</text>
-            <text x="129" y="96" fill="#0072BC" font-family="Inter, Arial, sans-serif" font-weight="800" font-size="68" letter-spacing="-2">S</text>
-
-            <!-- Solid Blue Bottom Bar ("Live Green  Live Better") -->
-            <rect x="0" y="103" width="194" height="19" fill="#0072BC"/>
-            <text x="97" y="116.5" fill="#FFFFFF" font-family="Inter, Arial, sans-serif" font-weight="600" font-size="13.2" text-anchor="middle" letter-spacing="0.3">
-              Live Green &#160;&#160;Live Better
-            </text>
-          </g>
-
-          <!-- RIGHT SECTION: Official Bharat Petroleum Emblem -->
-          <g transform="translate(216, 2)">
-            <!-- Outer Yellow Frame -->
-            <rect x="0" y="0" width="106" height="114" fill="#FFE600" stroke="#FFE600" stroke-width="2"/>
-            <!-- Top White Square -->
-            <rect x="2.5" y="2.5" width="101" height="68" fill="#FFFFFF"/>
-
-            <!-- Blue Outer Circle -->
-            <circle cx="53" cy="36.5" r="28" fill="#0072BC"/>
-            <!-- Inner White Ring -->
-            <circle cx="53" cy="36.5" r="20.5" stroke="#FFFFFF" stroke-width="2.6" fill="#0072BC"/>
-
-            <!-- Two Yellow Curved Droplets Inside Ring -->
-            <path d="M40 38 C38 27, 47 20, 57 22 C52 26, 50 32, 48 39 C45 43, 41 42, 40 38 Z" fill="#FFE600"/>
-            <path d="M66 35 C68 46, 59 53, 49 51 C54 47, 56 41, 58 34 C61 30, 65 31, 66 35 Z" fill="#FFE600"/>
-
-            <!-- "Bharat Petroleum" Stacked Text in Blue -->
-            <text x="53" y="88" fill="#0072BC" font-family="Inter, Arial, sans-serif" font-weight="800" font-size="16.5" text-anchor="middle">Bharat</text>
-            <text x="53" y="105" fill="#0072BC" font-family="Inter, Arial, sans-serif" font-weight="800" font-size="16.5" text-anchor="middle">Petroleum</text>
-
-            <!-- Thin Blue Bar Along Bottom Edge -->
-            <rect x="0" y="112" width="106" height="8" fill="#0072BC"/>
-          </g>
-        </svg>
-      </div>
-
-      <!-- Main Title & Subtitle -->
-      <h1 class="text-[22px] sm:text-[25px] font-bold uppercase tracking-[0.5px] text-white leading-tight">
-        BPCL CNG GAS STATION
-      </h1>
-      <p class="mt-1 text-[15px] text-[#E0F2FE] font-normal">
-        Find the Nearest Gas Stations
-      </p>
+    <!-- Circular White Badge with Linked PNG Logo -->
+    <div class="w-40 h-40 rounded-full bg-white flex items-center justify-center mb-5 p-3 shadow-2xl border-4 border-white overflow-hidden">
+      <img src="BPCL%20Gas%20Logo.png" alt="BPCL Gas Logo" class="w-full h-auto object-contain" />
     </div>
 
-    <!-- Compact Minimalist Controls: 3-Pill Filter + Nearest GPS Row -->
-    <div class="mt-6 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-      <button
-        id="tab-all"
-        onclick="setFilter('ALL')"
-        class="px-3 py-1.5 rounded-full text-xs font-semibold transition bg-[#FFE600] text-[#004B87] shadow-sm"
-      >
+    <!-- Clean Title & Subtitle -->
+    <h1 class="text-2xl sm:text-3xl font-extrabold tracking-wide text-center uppercase text-white">
+      BPCL CNG GAS STATION
+    </h1>
+    <p class="text-sm sm:text-base text-blue-100 mt-1 mb-5 text-center font-medium">
+      Find the Nearest Gas Stations
+    </p>
+
+    <!-- Compact Color Legend & GPS Nearest Button -->
+    <div class="flex flex-wrap items-center justify-center gap-2.5 mb-6 text-xs font-semibold">
+      <button onclick="setFilter('all')" id="btn-all" class="px-3 py-1.5 rounded-full bg-white text-blue-900 shadow-sm transition">
         All (25)
       </button>
-      <button
-        id="tab-online"
-        onclick="setFilter('Online')"
-        class="px-3 py-1.5 rounded-full text-xs font-medium transition bg-white/10 text-white hover:bg-white/20"
-      >
-        🟢 Online 24x7 (10)
+      <button onclick="setFilter('Online')" id="btn-online" class="px-3 py-1.5 rounded-full bg-green-700/90 text-white border border-white/30 flex items-center gap-1.5 transition">
+        <span class="w-2 h-2 rounded-full bg-green-300"></span> Online 24x7 (10)
       </button>
-      <button
-        id="tab-dbs"
-        onclick="setFilter('DBS')"
-        class="px-3 py-1.5 rounded-full text-xs font-medium transition bg-white/10 text-white hover:bg-white/20"
-      >
-        🔵 DBS Stations (15)
+      <button onclick="setFilter('DBS')" id="btn-dbs" class="px-3 py-1.5 rounded-full bg-[#002F5F] text-white border border-white/30 flex items-center gap-1.5 transition">
+        <span class="w-2 h-2 rounded-full bg-blue-300"></span> DBS (15)
       </button>
-      <button
-        id="gpsBtn"
-        onclick="findNearestByGPS()"
-        class="px-3 py-1.5 rounded-full text-xs font-medium transition bg-white/10 text-white hover:bg-white/20"
-      >
-        📍 <span id="gpsBtnText">Nearest First</span>
+      <button onclick="locateNearest()" id="gps-btn" class="px-3 py-1.5 rounded-full bg-[#FFE600] text-[#003B70] font-bold shadow-sm hover:bg-yellow-300 transition">
+        📍 Nearest First
       </button>
     </div>
-
-    <!-- Clean Single-Line Search Input -->
-    <div class="mt-3 relative">
-      <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-sky-200/75 text-xs"></i>
-      <input
-        id="searchInput"
-        type="text"
-        oninput="renderStations()"
-        placeholder="Search station or area..."
-        class="w-full pl-9 pr-8 py-2.5 rounded-lg bg-[#00427A]/70 border border-sky-300/25 text-white placeholder-sky-200/60 text-sm focus:outline-none focus:border-[#FFE600] transition"
-      />
-      <button
-        id="clearSearchBtn"
-        onclick="clearSearch()"
-        class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-sky-200/70 hover:text-white text-xs"
-        aria-label="Clear search"
-      >
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </div>
-
-    <!-- Subtle GPS Status Line (Only visible if triggered) -->
-    <div id="gpsStatusBanner" class="hidden mt-2 text-center text-xs text-[#FFE600] font-medium"></div>
 
     <!-- Station Blocks List -->
-    <div id="stationsList" class="mt-5">
-      <!-- Populated by JavaScript -->
-    </div>
-
-    <!-- Minimal Empty State -->
-    <div id="emptyState" class="hidden mt-6 py-8 text-center text-sm text-sky-100 bg-[#00427A]/50 rounded-lg border border-white/10">
-      No station found.
-      <button onclick="resetAllFilters()" class="ml-1 underline text-[#FFE600] font-medium">Reset</button>
-    </div>
+    <div id="stations-list" class="w-full space-y-3.5"></div>
 
   </main>
 
   <script>
-    // Complete 25 BPCL CNG Stations Dataset (10 Online Green first, 15 DBS Blue next)
-    const stationsData = [
-      // 10 ONLINE STATIONS (Green Blocks - 24x7 CNG Available)
-      {
-        displayTitle: "Vinod Adhoc, Chikalthana",
-        type: "Online",
-        lat: 19.865459,
-        lng: 75.421121,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.865459,75.421121"
-      },
-      {
-        displayTitle: "Narmada Petroleum, Beed Bypass",
-        type: "Online",
-        lat: 19.849829,
-        lng: 75.336131,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.849829,75.336131"
-      },
-      {
-        displayTitle: "BP Shendra, Ladgaon, Shendra",
-        type: "Online",
-        lat: 19.868123,
-        lng: 75.514303,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.868123,75.514303"
-      },
-      {
-        displayTitle: "BP Waluj, Shivara Fata, Waluj",
-        type: "Online",
-        lat: 19.781439,
-        lng: 75.199464,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.781439,75.199464"
-      },
-      {
-        displayTitle: "Saraswati Fuel Home, Zalta Fata",
-        type: "Online",
-        lat: 19.850328,
-        lng: 75.42883,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.850328,75.42883"
-      },
-      {
-        displayTitle: "Sai Krishna & Sons, Gangapur Road, Waluj",
-        type: "Online",
-        lat: 19.746774,
-        lng: 75.143974,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.746774,75.143974"
-      },
-      {
-        displayTitle: "Uma Refueling, Waluj MIDC",
-        type: "Online",
-        lat: 19.84852,
-        lng: 75.21545,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.84852,75.21545"
-      },
-      {
-        displayTitle: "Nilesh Petroleum, Gangapur Road",
-        type: "Online",
-        lat: 19.69859,
-        lng: 75.07034,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.69859,75.07034"
-      },
-      {
-        displayTitle: "Radhika Petroleum, Gangapur Road, Waluj",
-        type: "Online",
-        lat: 19.70538,
-        lng: 75.09194,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.70538,75.09194"
-      },
-      {
-        displayTitle: "Samruddhi Petroleum, Opp. Bajaj",
-        type: "Online",
-        lat: 19.82314,
-        lng: 75.2447,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.82314,75.2447"
-      },
+    const stations = [
+      // Online Stations (Green - 24x7 Available)
+      { name: "Adhoc Vinod", location: "Chikalthana", type: "Online", lat: 19.865459, lng: 75.421121 },
+      { name: "Narmada Petroleum (HPCL)", location: "Beed Bypass", type: "Online", lat: 19.849829, lng: 75.336131 },
+      { name: "BP Shendra", location: "Ladgaon, Shendra", type: "Online", lat: 19.868123, lng: 75.514303 },
+      { name: "BP Waluj", location: "Shivara Fata, Waluj", type: "Online", lat: 19.781439, lng: 75.199464 },
+      { name: "Saraswati Fuel Home", location: "Zalta Fata", type: "Online", lat: 19.850328, lng: 75.42883 },
+      { name: "Sai Krishna & Sons", location: "Gangapur Road, Waluj", type: "Online", lat: 19.746774, lng: 75.143974 },
+      { name: "Uma Refueling", location: "Waluj MIDC", type: "Online", lat: 19.84852, lng: 75.21545 },
+      { name: "Nilesh Petroleum", location: "Gangapur Road", type: "Online", lat: 19.69859, lng: 75.07034 },
+      { name: "Radhika Petroleum", location: "Gangapur Road, Waluj", type: "Online", lat: 19.70538, lng: 75.09194 },
+      { name: "Samruddhi Petroleum", location: "Opp. Bajaj", type: "Online", lat: 19.82314, lng: 75.2447 },
 
-      // 15 DAUGHTER BOOSTER STATIONS / DBS (BPCL Deep Blue Blocks)
-      {
-        displayTitle: "S R Petroleum, Zalta Fata",
-        type: "DBS",
-        lat: 19.836226,
-        lng: 75.432764,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.836226,75.432764"
-      },
-      {
-        displayTitle: "Tulja Mata Petroleum, Karodi",
-        type: "DBS",
-        lat: 19.88416,
-        lng: 75.201276,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.88416,75.201276"
-      },
-      {
-        displayTitle: "NBS Petroleum, Kasabkheda Phata, NH 52",
-        type: "DBS",
-        lat: 19.966476,
-        lng: 75.133008,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.966476,75.133008"
-      },
-      {
-        displayTitle: "Harne Petroleum, Harsul Talav, Jatwada Road",
-        type: "DBS",
-        lat: 19.921711,
-        lng: 75.336877,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.921711,75.336877"
-      },
-      {
-        displayTitle: "Ganesh Petroleum, Farula Fata, Paithan",
-        type: "DBS",
-        lat: 19.738054,
-        lng: 75.293952,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.738054,75.293952"
-      },
-      {
-        displayTitle: "Yash Petroleum, Hatanur, Kannad",
-        type: "DBS",
-        lat: 20.150815,
-        lng: 75.129448,
-        url: "https://www.google.com/maps/dir/?api=1&destination=20.150815,75.129448"
-      },
-      {
-        displayTitle: "Pandav Petroleum, Sawangi, Gangapur",
-        type: "DBS",
-        lat: 19.914497,
-        lng: 75.024351,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.914497,75.024351"
-      },
-      {
-        displayTitle: "Navbharat Petroleum, Sundarwadi, Jalna Road",
-        type: "DBS",
-        lat: 19.862216,
-        lng: 75.445377,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.862216,75.445377"
-      },
-      {
-        displayTitle: "Mahesh Petroleum, Bidkin, Paithan Road",
-        type: "DBS",
-        lat: 19.683346,
-        lng: 75.316983,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.683346,75.316983"
-      },
-      {
-        displayTitle: "Pardeshwar Petroleum, Kasabkheda Phata, Verul Road",
-        type: "DBS",
-        lat: 19.99088,
-        lng: 75.128169,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.99088,75.128169"
-      },
-      {
-        displayTitle: "Arihant Auto Centre, Waluj Road, AS Club",
-        type: "DBS",
-        lat: 19.847334,
-        lng: 75.267061,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.847334,75.267061"
-      },
-      {
-        displayTitle: "Harsh Petroleum, Maliwada",
-        type: "DBS",
-        lat: 19.927776,
-        lng: 75.203922,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.927776,75.203922"
-      },
-      {
-        displayTitle: "Jai Balaji Travels, Kanchanwadi, Paithan Road",
-        type: "DBS",
-        lat: 19.836338,
-        lng: 75.29189,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.836338,75.29189"
-      },
-      {
-        displayTitle: "Shri Rajureshwar Petrol & Fuel Centre, Pokhari",
-        type: "DBS",
-        lat: 19.923918,
-        lng: 75.389399,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.923918,75.389399"
-      },
-      {
-        displayTitle: "Parason Petroleum, Georai Tanda",
-        type: "DBS",
-        lat: 19.797361,
-        lng: 75.290183,
-        url: "https://www.google.com/maps/dir/?api=1&destination=19.797361,75.290183"
-      }
+      // Daughter Booster Stations (DBS - Blue)
+      { name: "S R Petroleum", location: "Zalta Fata", type: "DBS", lat: 19.836226, lng: 75.432764 },
+      { name: "Tulja Mata Petroleum", location: "Karodi", type: "DBS", lat: 19.88416, lng: 75.201276 },
+      { name: "NBS Petroleum", location: "Kasabkheda Phata, NH 52, Varzadi", type: "DBS", lat: 19.966476, lng: 75.133008 },
+      { name: "Harne Petroleum", location: "Harsul Talav, Jatwada Road", type: "DBS", lat: 19.921711, lng: 75.336877 },
+      { name: "Ganesh Petroleum", location: "Farula Fata, Paithan", type: "DBS", lat: 19.738054, lng: 75.293952 },
+      { name: "Yash Petroleum", location: "Hatanur, Tq. Kannad", type: "DBS", lat: 20.150815, lng: 75.129448 },
+      { name: "Pandav Petroleum", location: "Sawangi, Tq. Gangapur", type: "DBS", lat: 19.914497, lng: 75.024351 },
+      { name: "Navbharat Petroleum", location: "Sundarwadi, Jalna Road", type: "DBS", lat: 19.862216, lng: 75.445377 },
+      { name: "Mahesh Petroleum", location: "Bidkin, Paithan Road", type: "DBS", lat: 19.683346, lng: 75.316983 },
+      { name: "Pardeshwar Petroleum", location: "Kasabkheda Phata, Verul Road", type: "DBS", lat: 19.99088, lng: 75.128169 },
+      { name: "Arihant Auto Centre", location: "Waluj Road, AS Club", type: "DBS", lat: 19.847334, lng: 75.267061 },
+      { name: "Harsh Petroleum", location: "Maliwada", type: "DBS", lat: 19.927776, lng: 75.203922 },
+      { name: "Jai Balaji Travels", location: "Kanchanwadi, Paithan Road", type: "DBS", lat: 19.836338, lng: 75.29189 },
+      { name: "Shri Rajureshwar Petrol & Fuel Centre", location: "Pokhari, Cambridge", type: "DBS", lat: 19.923918, lng: 75.389399 },
+      { name: "Parason Petroleum", location: "Georai Tanda", type: "DBS", lat: 19.797361, lng: 75.290183 }
     ];
 
-    let activeFilter = 'ALL';
-    let sortByDistance = false;
-
-    function calculateDistanceKm(lat1, lon1, lat2, lon2) {
-      const R = 6371;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-    }
-
-    function setFilter(filterType) {
-      activeFilter = filterType;
-      const inactiveClass = "px-3 py-1.5 rounded-full text-xs font-medium transition bg-white/10 text-white hover:bg-white/20";
-      const activeClass = "px-3 py-1.5 rounded-full text-xs font-semibold transition bg-[#FFE600] text-[#004B87] shadow-sm";
-
-      document.getElementById('tab-all').className = filterType === 'ALL' ? activeClass : inactiveClass;
-      document.getElementById('tab-online').className = filterType === 'Online' ? activeClass : inactiveClass;
-      document.getElementById('tab-dbs').className = filterType === 'DBS' ? activeClass : inactiveClass;
-
-      renderStations();
-    }
-
-    function clearSearch() {
-      document.getElementById('searchInput').value = '';
-      renderStations();
-    }
-
-    function resetAllFilters() {
-      document.getElementById('searchInput').value = '';
-      setFilter('ALL');
-    }
-
-    function findNearestByGPS() {
-      const btn = document.getElementById('gpsBtn');
-      const btnText = document.getElementById('gpsBtnText');
-      const banner = document.getElementById('gpsStatusBanner');
-
-      if (!navigator.geolocation) {
-        banner.textContent = "Location not supported by browser.";
-        banner.classList.remove('hidden');
-        return;
-      }
-
-      btnText.textContent = "Locating...";
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          stationsData.forEach(st => {
-            st.distanceKm = calculateDistanceKm(pos.coords.latitude, pos.coords.longitude, st.lat, st.lng);
-          });
-          sortByDistance = true;
-          btn.className = "px-3 py-1.5 rounded-full text-xs font-semibold transition bg-[#FFE600] text-[#004B87] shadow-sm";
-          btnText.textContent = "Nearest Active";
-          banner.classList.add('hidden');
-          renderStations();
-        },
-        () => {
-          btnText.textContent = "Nearest First";
-          banner.textContent = "Please allow location access to sort by nearest.";
-          banner.classList.remove('hidden');
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
-    }
+    let activeFilter = 'all';
 
     function renderStations() {
-      const query = document.getElementById('searchInput').value.trim().toLowerCase();
-      const clearBtn = document.getElementById('clearSearchBtn');
-      const listContainer = document.getElementById('stationsList');
-      const emptyState = document.getElementById('emptyState');
+      const container = document.getElementById('stations-list');
+      const filtered = stations.filter(s => activeFilter === 'all' || s.type === activeFilter);
 
-      clearBtn.classList.toggle('hidden', query.length === 0);
-
-      let filtered = stationsData.filter(st => {
-        const matchesTab = activeFilter === 'ALL' || st.type === activeFilter;
-        const matchesQuery = !query || st.displayTitle.toLowerCase().includes(query);
-        return matchesTab && matchesQuery;
-      });
-
-      if (sortByDistance) {
-        filtered.sort((a, b) => (a.distanceKm || 9999) - (b.distanceKm || 9999));
-      }
-
-      if (filtered.length === 0) {
-        listContainer.innerHTML = '';
-        emptyState.classList.remove('hidden');
-        return;
-      }
-
-      emptyState.classList.add('hidden');
-
-      listContainer.innerHTML = filtered.map(st => {
-        const isOnline = st.type === 'Online';
-        const blockClass = isOnline ? 'station-block-online' : 'station-block-dbs';
-        const distancePill = st.distanceKm !== undefined
-          ? `<span class="ml-2 px-2 py-0.5 rounded-full bg-black/25 text-[11px] font-medium text-white/95 no-underline">${st.distanceKm.toFixed(1)} km</span>`
-          : '';
+      container.innerHTML = filtered.map(s => {
+        const blockClass = s.type === 'Online' ? 'block-online' : 'block-dbs';
+        const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}`;
+        const distText = s.distance !== undefined ? ` (${s.distance.toFixed(1)} km)` : '';
 
         return `
-          <a
-            href="${st.url}"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="${blockClass} relative block w-full rounded-[8px] py-[16px] px-[20px] mb-[14px] text-center group"
-          >
-            <span class="text-white font-medium text-[15px] sm:text-[16px] underline underline-offset-4 decoration-white/75 group-hover:decoration-white">
-              ${st.displayTitle}
+          <a href="${mapUrl}" target="_blank" rel="noopener noreferrer"
+             class="station-block ${blockClass} block w-full py-4 px-5 rounded-xl text-center shadow-md">
+            <span class="text-[15px] sm:text-base font-semibold text-white underline underline-offset-4 decoration-white/80">
+              ${s.name}, ${s.location}${distText}
             </span>
-            ${distancePill}
-            <i class="fa-solid fa-arrow-up-right-from-square text-xs text-white/50 opacity-0 group-hover:opacity-100 transition-opacity absolute right-4 top-1/2 -translate-y-1/2"></i>
           </a>
         `;
       }).join('');
     }
 
-    window.onload = renderStations;
+    function setFilter(filter) {
+      activeFilter = filter;
+      document.getElementById('btn-all').className = filter === 'all'
+        ? 'px-3 py-1.5 rounded-full bg-white text-blue-900 shadow-sm font-bold transition'
+        : 'px-3 py-1.5 rounded-full bg-blue-900/50 text-white border border-white/25 transition';
+      renderStations();
+    }
+
+    function getDistanceKm(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function locateNearest() {
+      const btn = document.getElementById('gps-btn');
+      if (!navigator.geolocation) return;
+      btn.textContent = 'Locating...';
+      navigator.geolocation.getCurrentPosition(pos => {
+        stations.forEach(s => {
+          s.distance = getDistanceKm(pos.coords.latitude, pos.coords.longitude, s.lat, s.lng);
+        });
+        stations.sort((a, b) => a.distance - b.distance);
+        btn.textContent = '✓ Sorted by Nearest';
+        renderStations();
+      }, () => {
+        btn.textContent = '📍 Nearest First';
+      });
+    }
+
+    renderStations();
   </script>
 </body>
 </html>
