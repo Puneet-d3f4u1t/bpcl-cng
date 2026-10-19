@@ -80,11 +80,11 @@
     <!-- Station Blocks List -->
     <div id="stations-list" class="w-full space-y-3.5"></div>
 
-    <!-- Live QR Scan / Visitor Counter Badge -->
+    <!-- Total Visit Counter Badge -->
     <div class="mt-10 pt-4 border-t border-white/15 w-full flex flex-col items-center justify-center text-xs text-blue-100/90 gap-1">
       <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#002F5F]/80 border border-white/20 shadow-inner">
         <span class="w-2 h-2 rounded-full bg-[#FFE600] animate-pulse"></span>
-        <span>Total QR Scans / Visits:</span>
+        <span>Total Visit:</span>
         <span id="scan-count" class="font-extrabold text-[#FFE600] text-sm tracking-wider">...</span>
       </div>
     </div>
@@ -133,11 +133,8 @@
         const blockClass = s.type === 'Online' ? 'block-online' : 'block-dbs';
         const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}`;
         
-        let distBadge = '';
-        if (s.roadKm !== undefined) {
-          const timeStr = s.driveMins ? ` • ${s.driveMins} min` : '';
-          distBadge = ` (${s.roadKm.toFixed(1)} km${timeStr})`;
-        }
+        // Show only road distance in km (driving time removed)
+        const distBadge = s.roadKm !== undefined ? ` (${s.roadKm.toFixed(1)} km)` : '';
 
         return `
           <a href="${mapUrl}" target="_blank" rel="noopener noreferrer"
@@ -170,7 +167,7 @@
       return straightKm * 1.28;
     }
 
-    // Fetch real driving road distances & durations via OSRM Table API
+    // Fetch real driving road distances via OSRM Table API
     async function locateNearest() {
       const btn = document.getElementById('gps-btn');
       if (!navigator.geolocation) {
@@ -190,17 +187,14 @@
             ...stations.map(s => `${s.lng},${s.lat}`)
           ].join(';');
 
-          const osrmUrl = `https://router.project-osrm.org/table/v1/driving/${coordsList}?sources=0&annotations=distance,duration`;
+          const osrmUrl = `https://router.project-osrm.org/table/v1/driving/${coordsList}?sources=0&annotations=distance`;
           const response = await fetch(osrmUrl);
           const data = await response.json();
 
           if (data.code === 'Ok' && data.distances && data.distances[0]) {
             stations.forEach((s, idx) => {
               const distMeters = data.distances[0][idx + 1];
-              const durSeconds = data.durations ? data.durations[0][idx + 1] : null;
-
               s.roadKm = distMeters !== null ? (distMeters / 1000) : getFallbackRoadKm(userLat, userLng, s.lat, s.lng);
-              s.driveMins = durSeconds !== null ? Math.max(1, Math.round(durSeconds / 60)) : null;
             });
           } else {
             throw new Error('OSRM response invalid');
@@ -208,7 +202,6 @@
         } catch (err) {
           stations.forEach(s => {
             s.roadKm = getFallbackRoadKm(userLat, userLng, s.lat, s.lng);
-            s.driveMins = null;
           });
         }
 
@@ -223,7 +216,7 @@
       });
     }
 
-    // Live QR Scan / Visit Counter (Counts once per browser session)
+    // Live Total Visit Counter (Counts once per browser session)
     async function updateScanCounter() {
       const counterEl = document.getElementById('scan-count');
       const namespace = 'puneet-d3f4u1t-bpcl-cng';
@@ -231,7 +224,6 @@
       const hasVisitedThisSession = sessionStorage.getItem('bpcl_cng_counted');
 
       try {
-        // Increment (/up) on new session; only read (/) if user just refreshed the page
         const endpoint = hasVisitedThisSession
           ? `https://api.counterapi.dev/v1/${namespace}/${key}/`
           : `https://api.counterapi.dev/v1/${namespace}/${key}/up`;
