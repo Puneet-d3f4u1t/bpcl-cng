@@ -133,7 +133,7 @@
         const blockClass = s.type === 'Online' ? 'block-online' : 'block-dbs';
         const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}`;
         
-        // Show only road distance in km (driving time removed)
+        // Show only road distance in km
         const distBadge = s.roadKm !== undefined ? ` (${s.roadKm.toFixed(1)} km)` : '';
 
         return `
@@ -216,29 +216,28 @@
       });
     }
 
-    // Live Total Visit Counter (Counts once per browser session)
+    // Live Total Visit Counter (Increments +1 on every page open / refresh)
     async function updateScanCounter() {
       const counterEl = document.getElementById('scan-count');
       const namespace = 'puneet-d3f4u1t-bpcl-cng';
       const key = 'qr-scans';
-      const hasVisitedThisSession = sessionStorage.getItem('bpcl_cng_counted');
 
       try {
-        const endpoint = hasVisitedThisSession
-          ? `https://api.counterapi.dev/v1/${namespace}/${key}/`
-          : `https://api.counterapi.dev/v1/${namespace}/${key}/up`;
-
-        const res = await fetch(endpoint);
+        // Cache-busting timestamp ensures every click/refresh increments immediately
+        const endpoint = `https://api.counterapi.dev/v1/${namespace}/${key}/up?t=${Date.now()}`;
+        const res = await fetch(endpoint, { cache: 'no-store' });
         const data = await res.json();
 
         if (data && typeof data.count === 'number') {
           counterEl.textContent = data.count.toLocaleString('en-IN');
-          sessionStorage.setItem('bpcl_cng_counted', 'true');
         } else {
-          counterEl.textContent = '1';
+          throw new Error('Primary counter invalid');
         }
       } catch (e) {
-        counterEl.textContent = 'Active';
+        // Backup per-device counter if corporate firewall blocks external counter API
+        const localCount = parseInt(localStorage.getItem('bpcl_visit_fallback') || '0', 10) + 1;
+        localStorage.setItem('bpcl_visit_fallback', localCount);
+        counterEl.textContent = localCount.toLocaleString('en-IN');
       }
     }
 
