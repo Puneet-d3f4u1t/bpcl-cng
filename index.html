@@ -63,7 +63,7 @@
 
     <!-- Compact Color Legend & GPS Nearest Button -->
     <div class="flex flex-wrap items-center justify-center gap-2.5 mb-6 text-xs font-semibold">
-      <button onclick="setFilter('all')" id="btn-all" class="px-3 py-1.5 rounded-full bg-white text-blue-900 shadow-sm transition">
+      <button onclick="setFilter('all')" id="btn-all" class="px-3 py-1.5 rounded-full bg-white text-blue-900 shadow-sm font-bold transition">
         All (25)
       </button>
       <button onclick="setFilter('Online')" id="btn-online" class="px-3 py-1.5 rounded-full bg-green-700/90 text-white border border-white/30 flex items-center gap-1.5 transition">
@@ -79,6 +79,15 @@
 
     <!-- Station Blocks List -->
     <div id="stations-list" class="w-full space-y-3.5"></div>
+
+    <!-- Live QR Scan / Visitor Counter Badge -->
+    <div class="mt-10 pt-4 border-t border-white/15 w-full flex flex-col items-center justify-center text-xs text-blue-100/90 gap-1">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#002F5F]/80 border border-white/20 shadow-inner">
+        <span class="w-2 h-2 rounded-full bg-[#FFE600] animate-pulse"></span>
+        <span>Total QR Scans / Visits:</span>
+        <span id="scan-count" class="font-extrabold text-[#FFE600] text-sm tracking-wider">...</span>
+      </div>
+    </div>
 
   </main>
 
@@ -123,13 +132,18 @@
       container.innerHTML = filtered.map(s => {
         const blockClass = s.type === 'Online' ? 'block-online' : 'block-dbs';
         const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}`;
-        const distText = s.distance !== undefined ? ` (${s.distance.toFixed(1)} km)` : '';
+        
+        let distBadge = '';
+        if (s.roadKm !== undefined) {
+          const timeStr = s.driveMins ? ` • ${s.driveMins} min` : '';
+          distBadge = ` (${s.roadKm.toFixed(1)} km${timeStr})`;
+        }
 
         return `
           <a href="${mapUrl}" target="_blank" rel="noopener noreferrer"
              class="station-block ${blockClass} block w-full py-4 px-5 rounded-xl text-center shadow-md">
             <span class="text-[15px] sm:text-base font-semibold text-white underline underline-offset-4 decoration-white/80">
-              ${s.name}, ${s.location}${distText}
+              ${s.name}, ${s.location}${distBadge}
             </span>
           </a>
         `;
@@ -144,33 +158,100 @@
       renderStations();
     }
 
-    function getDistanceKm(lat1, lon1, lat2, lon2) {
+    // Fallback formula if OSRM server is unreachable
+    function getFallbackRoadKm(lat1, lon1, lat2, lon2) {
       const R = 6371;
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLon = (lon2 - lon1) * Math.PI / 180;
       const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
                 Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
                 Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const straightKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return straightKm * 1.28;
     }
 
-    function locateNearest() {
+    // Fetch real driving road distances & durations via OSRM Table API
+    async function locateNearest() {
       const btn = document.getElementById('gps-btn');
-      if (!navigator.geolocation) return;
-      btn.textContent = 'Locating...';
-      navigator.geolocation.getCurrentPosition(pos => {
-        stations.forEach(s => {
-          s.distance = getDistanceKm(pos.coords.latitude, pos.coords.longitude, s.lat, s.lng);
-        });
-        stations.sort((a, b) => a.distance - b.distance);
-        btn.textContent = '✓ Sorted by Nearest';
+      if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser.');
+        return;
+      }
+
+      btn.textContent = 'Calculating Road Distance...';
+
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const userLat = pos.coords.latitude;
+        const userLng = pos.coords.longitude;
+
+        try {
+          const coordsList = [
+            `${userLng},${userLat}`,
+            ...stations.map(s => `${s.lng},${s.lat}`)
+          ].join(';');
+
+          const osrmUrl = `https://router.project-osrm.org/table/v1/driving/${coordsList}?sources=0&annotations=distance,duration`;
+          const response = await fetch(osrmUrl);
+          const data = await response.json();
+
+          if (data.code === 'Ok' && data.distances && data.distances[0]) {
+            stations.forEach((s, idx) => {
+              const distMeters = data.distances[0][idx + 1];
+              const durSeconds = data.durations ? data.durations[0][idx + 1] : null;
+
+              s.roadKm = distMeters !== null ? (distMeters / 1000) : getFallbackRoadKm(userLat, userLng, s.lat, s.lng);
+              s.driveMins = durSeconds !== null ? Math.max(1, Math.round(durSeconds / 60)) : null;
+            });
+          } else {
+            throw new Error('OSRM response invalid');
+          }
+        } catch (err) {
+          stations.forEach(s => {
+            s.roadKm = getFallbackRoadKm(userLat, userLng, s.lat, s.lng);
+            s.driveMins = null;
+          });
+        }
+
+        stations.sort((a, b) => a.roadKm - b.roadKm);
+        btn.textContent = '✓ Sorted by Road Distance';
         renderStations();
       }, () => {
-        btn.textContent = '📍 Nearest First';
+        btn.textContent = '📍 Nearest First (Allow GPS)';
+      }, {
+        enableHighAccuracy: true,
+        timeout: 10000
       });
     }
 
+    // Live QR Scan / Visit Counter (Counts once per browser session)
+    async function updateScanCounter() {
+      const counterEl = document.getElementById('scan-count');
+      const namespace = 'puneet-d3f4u1t-bpcl-cng';
+      const key = 'qr-scans';
+      const hasVisitedThisSession = sessionStorage.getItem('bpcl_cng_counted');
+
+      try {
+        // Increment (/up) on new session; only read (/) if user just refreshed the page
+        const endpoint = hasVisitedThisSession
+          ? `https://api.counterapi.dev/v1/${namespace}/${key}/`
+          : `https://api.counterapi.dev/v1/${namespace}/${key}/up`;
+
+        const res = await fetch(endpoint);
+        const data = await res.json();
+
+        if (data && typeof data.count === 'number') {
+          counterEl.textContent = data.count.toLocaleString('en-IN');
+          sessionStorage.setItem('bpcl_cng_counted', 'true');
+        } else {
+          counterEl.textContent = '1';
+        }
+      } catch (e) {
+        counterEl.textContent = 'Active';
+      }
+    }
+
     renderStations();
+    updateScanCounter();
   </script>
 </body>
 </html>
